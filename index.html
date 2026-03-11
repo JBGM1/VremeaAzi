@@ -3,140 +3,299 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VremeaAzi – Meteo Avansat</title>
+  <title>VremeaAzi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <div class="weather-card">
+<div class="app-shell">
 
-    <!-- HEADER -->
-    <div class="header">
-      <div class="app-brand">
-        <span class="brand-icon">🌤</span>
-        <h3 class="app-title">VremeaAzi</h3>
-      </div>
-      <button id="theme-toggle" aria-label="Schimbă tema">
-        <span class="toggle-track">
-          <span class="toggle-thumb"></span>
-          <span class="toggle-icon-sun">☀️</span>
-          <span class="toggle-icon-moon">🌙</span>
-        </span>
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <svg class="brand-svg" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="16" fill="url(#brandGrad)"/>
+        <path d="M9 18c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="16" cy="11" r="2.5" fill="#fff"/>
+        <path d="M6 22h20M8 25h16" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+        <defs>
+          <linearGradient id="brandGrad" x1="0" y1="0" x2="32" y2="32">
+            <stop offset="0%" stop-color="#4fa3e8"/>
+            <stop offset="100%" stop-color="#7c3aed"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="brand-name">VremeaAzi</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-section="s-weather" title="Vreme actuală">
+        <i data-lucide="cloud-sun"></i><span>Vreme</span>
+      </a>
+      <a class="nav-item" data-section="s-hourly" title="Prognoza orară">
+        <i data-lucide="clock"></i><span>Orar</span>
+      </a>
+      <a class="nav-item" data-section="s-forecast" title="Prognoza 5 zile">
+        <i data-lucide="calendar-days"></i><span>5 Zile</span>
+      </a>
+      <a class="nav-item" data-section="s-details" title="Detalii meteo">
+        <i data-lucide="gauge"></i><span>Detalii</span>
+      </a>
+      <a class="nav-item" data-section="s-sun" title="Răsărit & Apus">
+        <i data-lucide="sunrise"></i><span>Soare</span>
+      </a>
+      <a class="nav-item" data-section="s-air" title="Calitatea aerului">
+        <i data-lucide="wind"></i><span>Aer</span>
+      </a>
+      <a class="nav-item" data-section="s-travel" title="Ghid turistic">
+        <i data-lucide="compass"></i><span>Ghid</span>
+      </a>
+      <a class="nav-item" data-section="s-map" title="Hartă">
+        <i data-lucide="map"></i><span>Hartă</span>
+      </a>
+    </nav>
+
+    <button id="theme-toggle" class="theme-btn" title="Schimbă tema">
+      <i data-lucide="sun" class="icon-sun"></i>
+      <i data-lucide="moon" class="icon-moon"></i>
+    </button>
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="main-content">
+
+    <!-- Header -->
+    <header class="app-header">
+      <button class="sidebar-toggle" id="sidebar-toggle" title="Meniu">
+        <i data-lucide="menu"></i>
       </button>
-    </div>
-
-    <!-- SEARCH -->
-    <div class="search-container">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="city-input" placeholder="Caută un oraș..." autocomplete="off">
-      </div>
-      <div id="suggestions" class="suggestions"></div>
-    </div>
-
-    <div class="button-group">
-      <button id="search-btn"><span>🔎</span> Caută</button>
-      <button id="locate-btn" class="btn-secondary"><span>📍</span> Locația mea</button>
-    </div>
-
-    <!-- MAIN WEATHER INFO -->
-    <div class="info">
-
-      <div class="location-header">
-        <h1 id="city-name">—</h1>
-        <p id="date-time" class="date-time">—</p>
-      </div>
-
-      <div class="weather-hero">
-        <div class="weather-icon-wrap">
-          <img id="weather-icon" alt="Pictogramă vreme">
+      <div class="search-container">
+        <div class="search-box">
+          <i data-lucide="search" class="search-icon-svg"></i>
+          <input type="text" id="city-input" placeholder="Caută orice oraș din lume…" autocomplete="off">
         </div>
-        <div class="temp-block">
-          <h2 id="temp">—°</h2>
-          <p id="feels-like">Simțit: —°C</p>
-          <p id="desc" class="description">—</p>
-        </div>
+        <div id="suggestions" class="suggestions"></div>
       </div>
+      <div class="header-actions">
+        <button id="search-btn" class="btn-primary">
+          <i data-lucide="search"></i><span>Caută</span>
+        </button>
+        <button id="locate-btn" class="btn-ghost">
+          <i data-lucide="locate"></i><span>Locația mea</span>
+        </button>
+      </div>
+    </header>
 
-      <!-- Hourly -->
-      <section class="card-section">
-        <h3 class="section-title"><span>⏱</span> Prognoza orară</h3>
+    <!-- Scroll area -->
+    <div class="scroll-area" id="scroll-area">
+
+      <!-- ── WEATHER HERO ── -->
+      <section id="s-weather" class="page-section hero-section">
+        <div class="hero-left">
+          <div id="city-name" class="city-name">—</div>
+          <div id="date-time" class="date-time">—</div>
+          <div class="temp-row">
+            <img id="weather-icon" class="weather-icon" alt="">
+            <div>
+              <div id="temp" class="temp">—°</div>
+              <div id="feels-like" class="feels-like">Simțit: —</div>
+            </div>
+          </div>
+          <div id="desc" class="weather-desc">—</div>
+        </div>
+        <div class="hero-right" id="hero-stats">
+          <div class="stat-pill">
+            <i data-lucide="droplets"></i>
+            <span id="h-humidity">—</span>
+          </div>
+          <div class="stat-pill">
+            <i data-lucide="wind"></i>
+            <span id="h-wind">—</span>
+          </div>
+          <div class="stat-pill">
+            <i data-lucide="eye"></i>
+            <span id="h-visibility">—</span>
+          </div>
+          <div class="stat-pill">
+            <i data-lucide="gauge"></i>
+            <span id="h-pressure">—</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── HOURLY ── -->
+      <section id="s-hourly" class="page-section">
+        <div class="section-header">
+          <i data-lucide="clock"></i>
+          <h2>Prognoza orară</h2>
+        </div>
         <div id="hourly-forecast" class="hourly-container"></div>
       </section>
 
-      <!-- Details Grid -->
-      <div class="details-grid">
-        <div class="detail-card"><div class="d-icon">💧</div><div class="d-body"><span class="d-label">Umiditate</span><span id="humidity" class="d-val">—</span></div></div>
-        <div class="detail-card"><div class="d-icon">💨</div><div class="d-body"><span class="d-label">Vânt</span><span id="wind" class="d-val">—</span></div></div>
-        <div class="detail-card"><div class="d-icon">🌡️</div><div class="d-body"><span class="d-label">Presiune</span><span id="pressure" class="d-val">—</span></div></div>
-        <div class="detail-card"><div class="d-icon">👁️</div><div class="d-body"><span class="d-label">Vizibilitate</span><span id="visibility" class="d-val">—</span></div></div>
-        <div class="detail-card"><div class="d-icon">🧭</div><div class="d-body"><span class="d-label">Direcție vânt</span><span id="wind-direction" class="d-val">—</span></div></div>
-        <div class="detail-card"><div class="d-icon">☁️</div><div class="d-body"><span class="d-label">Nori</span><span id="clouds" class="d-val">—</span></div></div>
-        <div class="detail-card"><div class="d-icon">💦</div><div class="d-body"><span class="d-label">Punct de rouă</span><span id="dew-point" class="d-val">—</span></div></div>
-        <div class="detail-card"><div class="d-icon">🔆</div><div class="d-body"><span class="d-label">Index UV</span><span id="uv-index" class="d-val">—</span></div></div>
-      </div>
+      <!-- ── TWO-COL AREA ── -->
+      <div class="two-col">
 
-      <!-- Sunrise / Sunset -->
-      <section class="card-section">
-        <h3 class="section-title"><span>🌅</span> Răsărit &amp; Apus</h3>
-        <div class="sun-times">
-          <div class="sun-item"><span class="sun-emoji">🌅</span><div><div class="sun-label">Răsărit</div><div id="sunrise" class="sun-val">—</div></div></div>
-          <div class="sun-divider"></div>
-          <div class="sun-item"><span class="sun-emoji">🌇</span><div><div class="sun-label">Apus</div><div id="sunset" class="sun-val">—</div></div></div>
-        </div>
-        <div class="daylight-bar">
-          <span class="daylight-label">Durată zi</span>
-          <span id="daylight-duration" class="daylight-val">—</span>
-        </div>
-      </section>
+        <!-- LEFT: Details + Info -->
+        <div class="col">
 
-      <!-- Air Quality -->
-      <section class="card-section">
-        <h3 class="section-title"><span>🌫️</span> Calitatea aerului</h3>
-        <div class="aqi-wrapper">
-          <div class="aqi-main">
-            <div id="aqi-value" class="aqi-num">—</div>
-            <div id="aqi-label" class="aqi-desc">Se încarcă…</div>
+          <section id="s-details" class="page-section">
+            <div class="section-header">
+              <i data-lucide="gauge"></i>
+              <h2>Detalii meteo</h2>
+            </div>
+            <div class="details-grid">
+              <div class="detail-card">
+                <div class="dc-icon"><i data-lucide="droplets"></i></div>
+                <div class="dc-body"><span class="dc-label">Umiditate</span><span id="humidity" class="dc-val">—</span></div>
+              </div>
+              <div class="detail-card">
+                <div class="dc-icon"><i data-lucide="wind"></i></div>
+                <div class="dc-body"><span class="dc-label">Vânt</span><span id="wind" class="dc-val">—</span></div>
+              </div>
+              <div class="detail-card">
+                <div class="dc-icon"><i data-lucide="gauge"></i></div>
+                <div class="dc-body"><span class="dc-label">Presiune</span><span id="pressure" class="dc-val">—</span></div>
+              </div>
+              <div class="detail-card">
+                <div class="dc-icon"><i data-lucide="eye"></i></div>
+                <div class="dc-body"><span class="dc-label">Vizibilitate</span><span id="visibility" class="dc-val">—</span></div>
+              </div>
+              <div class="detail-card">
+                <div class="dc-icon"><i data-lucide="compass"></i></div>
+                <div class="dc-body"><span class="dc-label">Direcție vânt</span><span id="wind-direction" class="dc-val">—</span></div>
+              </div>
+              <div class="detail-card">
+                <div class="dc-icon"><i data-lucide="cloud"></i></div>
+                <div class="dc-body"><span class="dc-label">Nori</span><span id="clouds" class="dc-val">—</span></div>
+              </div>
+              <div class="detail-card">
+                <div class="dc-icon"><i data-lucide="thermometer"></i></div>
+                <div class="dc-body"><span class="dc-label">Punct de rouă</span><span id="dew-point" class="dc-val">—</span></div>
+              </div>
+              <div class="detail-card">
+                <div class="dc-icon"><i data-lucide="sun"></i></div>
+                <div class="dc-body"><span class="dc-label">Index UV</span><span id="uv-index" class="dc-val">—</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="page-section">
+            <div class="section-header">
+              <i data-lucide="info"></i>
+              <h2>Informații</h2>
+            </div>
+            <div class="info-grid">
+              <div class="info-cell"><span class="ic-label">Coordonate</span><span id="coordinates" class="ic-val">—</span></div>
+              <div class="info-cell"><span class="ic-label">Fus orar</span><span id="timezone" class="ic-val">—</span></div>
+              <div class="info-cell"><span class="ic-label">Prob. ploaie</span><span id="rain-probability" class="ic-val">—</span></div>
+              <div class="info-cell"><span class="ic-label">Altitudine</span><span id="elevation" class="ic-val">—</span></div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- RIGHT: Sun + Air + Forecast -->
+        <div class="col">
+
+          <section id="s-sun" class="page-section">
+            <div class="section-header">
+              <i data-lucide="sunrise"></i>
+              <h2>Răsărit &amp; Apus</h2>
+            </div>
+            <div class="sun-row">
+              <div class="sun-block">
+                <div class="sun-icon-wrap sunrise-icon"><i data-lucide="sunrise"></i></div>
+                <div>
+                  <div class="sun-lbl">Răsărit</div>
+                  <div id="sunrise" class="sun-val">—</div>
+                </div>
+              </div>
+              <div class="sun-divider"></div>
+              <div class="sun-block">
+                <div class="sun-icon-wrap sunset-icon"><i data-lucide="sunset"></i></div>
+                <div>
+                  <div class="sun-lbl">Apus</div>
+                  <div id="sunset" class="sun-val">—</div>
+                </div>
+              </div>
+            </div>
+            <div class="daylight-row">
+              <i data-lucide="timer"></i>
+              <span>Durată zi</span>
+              <span id="daylight-duration" class="daylight-val">—</span>
+            </div>
+          </section>
+
+          <section id="s-air" class="page-section">
+            <div class="section-header">
+              <i data-lucide="wind"></i>
+              <h2>Calitatea aerului</h2>
+            </div>
+            <div class="aqi-wrap">
+              <div class="aqi-score">
+                <div id="aqi-value" class="aqi-num">—</div>
+                <div id="aqi-label" class="aqi-lbl">—</div>
+              </div>
+              <div class="aqi-grid">
+                <div class="aqi-cell"><span>PM2.5</span><span id="pm25">—</span></div>
+                <div class="aqi-cell"><span>PM10</span><span id="pm10">—</span></div>
+                <div class="aqi-cell"><span>O₃</span><span id="o3">—</span></div>
+                <div class="aqi-cell"><span>NO₂</span><span id="no2">—</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section id="s-forecast" class="page-section">
+            <div class="section-header">
+              <i data-lucide="calendar-days"></i>
+              <h2>Prognoza 5 zile</h2>
+            </div>
+            <div id="forecast" class="forecast-grid"></div>
+          </section>
+
+        </div>
+      </div><!-- /two-col -->
+
+      <!-- ── TRAVEL GUIDE ── -->
+      <section id="s-travel" class="page-section travel-section" style="display:none">
+        <div class="section-header travel-header">
+          <i data-lucide="compass"></i>
+          <h2 id="travel-title">Ghid turistic</h2>
+          <span class="ai-badge">
+            <i data-lucide="globe"></i> Ghid live
+          </span>
+        </div>
+        <p id="travel-tagline" class="travel-tagline"></p>
+        <div class="affiliate-strip" id="affiliate-strip"></div>
+        <div id="travel-cards" class="travel-cards"></div>
+        <div id="today-idea" class="today-idea" style="display:none">
+          <div class="idea-icon"><i data-lucide="lightbulb"></i></div>
+          <div>
+            <div class="idea-label">Ideea zilei</div>
+            <p id="today-idea-text"></p>
           </div>
-          <div class="aqi-grid">
-            <div class="aqi-cell"><span class="aqi-name">PM2.5</span><span id="pm25" class="aqi-val">—</span></div>
-            <div class="aqi-cell"><span class="aqi-name">PM10</span><span id="pm10" class="aqi-val">—</span></div>
-            <div class="aqi-cell"><span class="aqi-name">O₃</span><span id="o3" class="aqi-val">—</span></div>
-            <div class="aqi-cell"><span class="aqi-name">NO₂</span><span id="no2" class="aqi-val">—</span></div>
-          </div>
         </div>
       </section>
 
-      <!-- 5-day forecast -->
-      <section class="card-section">
-        <h3 class="section-title"><span>📅</span> Prognoza 5 zile</h3>
-        <div id="forecast" class="forecast-container"></div>
-      </section>
-
-      <!-- Additional info -->
-      <section class="card-section">
-        <h3 class="section-title"><span>📊</span> Informații suplimentare</h3>
-        <div class="info-grid">
-          <div class="info-cell"><span class="info-label">Coordonate</span><span id="coordinates" class="info-val">—</span></div>
-          <div class="info-cell"><span class="info-label">Fus orar</span><span id="timezone" class="info-val">—</span></div>
-          <div class="info-cell"><span class="info-label">Altitudine</span><span id="elevation" class="info-val">— m</span></div>
-          <div class="info-cell"><span class="info-label">Prob. ploaie</span><span id="rain-probability" class="info-val">—</span></div>
+      <!-- ── MAP ── -->
+      <section id="s-map" class="page-section">
+        <div class="section-header">
+          <i data-lucide="map"></i>
+          <h2>Hartă interactivă</h2>
         </div>
-      </section>
-
-      <!-- Map -->
-      <section class="card-section" id="map-section">
-        <h3 class="section-title"><span>🗺️</span> Hartă interactivă</h3>
         <div class="map-wrap">
-          <iframe id="google-map" loading="lazy" title="Hartă locație"></iframe>
+          <iframe id="google-map" loading="lazy" title="Hartă"></iframe>
         </div>
       </section>
 
-    </div><!-- end .info -->
-  </div><!-- end .weather-card -->
+    </div><!-- /scroll-area -->
+  </main>
+</div><!-- /app-shell -->
 
-  <script src="script.js"></script>
+<script src="script.js"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>
