@@ -383,23 +383,85 @@ async function fetchAirQuality(lat, lon) {
 }
 
 // ══════════════════════════════════════════
-// AFFILIATE LINKS
+// CITY TIER CLASSIFICATION
+// large  = major tourist city (GYG/Viator work well)
+// medium = regional city (Booking/Airbnb + Facebook)
+// small  = small town/village (Wikipedia + Facebook only)
 // ══════════════════════════════════════════
-// Replace IDs with your real affiliate IDs after registration
+const LARGE_CITIES = new Set([
+  'paris','london','rome','barcelona','amsterdam','berlin','vienna','prague','budapest',
+  'lisbon','madrid','athens','istanbul','dubai','tokyo','bangkok','singapore','sydney',
+  'new york','los angeles','toronto','chicago','miami','montreal',
+  'beijing','shanghai','seoul','hong kong','mumbai','delhi','cairo',
+  'rio de janeiro','buenos aires','cape town','johannesburg',
+  'mexico city','lima','bogota',
+  'bucharest','bucurești','cluj-napoca','timisoara','timișoara','brasov','brașov',
+  'constanta','constanța','iasi','iași','craiova','oradea','galati','galați',
+  'münchen','munich','hamburg','milan','milano','florence','firenze','venice','venezia',
+  'krakow','warsaw','wroclaw','gdansk','porto','seville','sevilla','valencia',
+  'brussels','bruges','ghent','zurich','geneva','bern','stockholm','oslo',
+  'copenhagen','helsinki','riga','tallinn','vilnius','sofia','zagreb','belgrade',
+  'sarajevo','dubrovnik','split','athens','thessaloniki','kyiv','lviv','minsk',
+]);
+
+const MEDIUM_CITIES = new Set([
+  'sibiu','sinaia','brasov','brașov','alba iulia','targu mures','târgu mureș',
+  'bacau','bacău','suceava','tulcea','piatra neamt','piatra neamț','deva',
+  'pitesti','pitești','buzau','buzău','satu mare','baia mare','arad',
+  'resita','reșița','sfantu gheorghe','sfântu gheorghe','giurgiu',
+  'mangalia','neptun','venus','mamaia','eforie',
+]);
+
+function cityTier(city) {
+  const n = normalizeStr(city);
+  if (LARGE_CITIES.has(n)) return 'large';
+  if (MEDIUM_CITIES.has(n)) return 'medium';
+  // Heuristic: if OTM returned results it's at least medium
+  return 'small';
+}
+
+// ══════════════════════════════════════════
+// AFFILIATE LINKS
+// Replace IDs with your real affiliate IDs
+// ══════════════════════════════════════════
 const AFF = {
-  booking: c=>`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(c)}&aid=YOUR_AID`,
-  gyg:     c=>`https://www.getyourguide.com/s/?q=${encodeURIComponent(c)}&partner_id=YOUR_ID`,
-  viator:  c=>`https://www.viator.com/search/${encodeURIComponent(c)}?pid=YOUR_PID`,
-  airbnb:  c=>`https://www.airbnb.com/s/${encodeURIComponent(c)}/homes`,
+  booking:     c=>`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(c)}&aid=YOUR_AID`,
+  gyg:         c=>`https://www.getyourguide.com/s/?q=${encodeURIComponent(c)}&partner_id=YOUR_ID`,
+  viator:      c=>`https://www.viator.com/search/${encodeURIComponent(c)}?pid=YOUR_PID`,
+  airbnb:      c=>`https://www.airbnb.com/s/${encodeURIComponent(c)}/homes`,
+  tripadvisor: c=>`https://www.tripadvisor.com/Search?q=${encodeURIComponent(c)}`,
+  facebook:    c=>`https://www.facebook.com/search/groups/?q=${encodeURIComponent(c+' tourism travel')}`,
 };
 
+// Affiliate strip buttons vary by tier
 function buildAffStrip(city) {
-  return [
-    {cls:'aff-booking',href:AFF.booking(city),icon:'🏨',name:'Booking.com',sub:'Rezervă hotel'},
-    {cls:'aff-gyg',    href:AFF.gyg(city),    icon:'🎟',name:'GetYourGuide',sub:'Tururi & Activități'},
-    {cls:'aff-viator', href:AFF.viator(city), icon:'🌍',name:'Viator',      sub:'Experiențe locale'},
-    {cls:'aff-airbnb', href:AFF.airbnb(city), icon:'🏡',name:'Airbnb',      sub:'Cazări unice'},
-  ].map(b=>`
+  const tier = cityTier(city);
+  let buttons = [];
+
+  if (tier === 'large') {
+    buttons = [
+      {cls:'aff-booking', href:AFF.booking(city),     icon:'🏨', name:'Booking.com',   sub:'Rezervă hotel'},
+      {cls:'aff-gyg',     href:AFF.gyg(city),         icon:'🎟', name:'GetYourGuide',  sub:'Tururi & Activități'},
+      {cls:'aff-viator',  href:AFF.viator(city),      icon:'🌍', name:'Viator',         sub:'Experiențe locale'},
+      {cls:'aff-airbnb',  href:AFF.airbnb(city),      icon:'🏡', name:'Airbnb',         sub:'Cazări unice'},
+    ];
+  } else if (tier === 'medium') {
+    buttons = [
+      {cls:'aff-booking', href:AFF.booking(city),     icon:'🏨', name:'Booking.com',   sub:'Rezervă hotel'},
+      {cls:'aff-airbnb',  href:AFF.airbnb(city),      icon:'🏡', name:'Airbnb',         sub:'Cazări unice'},
+      {cls:'aff-tripadvisor',href:AFF.tripadvisor(city),icon:'⭐',name:'TripAdvisor',   sub:'Recenzii & locuri'},
+      {cls:'aff-facebook',href:AFF.facebook(city),    icon:'👥', name:'Grupuri locale', sub:'Comunități Facebook'},
+    ];
+  } else {
+    // small
+    buttons = [
+      {cls:'aff-booking', href:AFF.booking(city),     icon:'🏨', name:'Booking.com',   sub:'Cazare'},
+      {cls:'aff-facebook',href:AFF.facebook(city),    icon:'👥', name:'Grupuri locale', sub:'Comunități Facebook'},
+      {cls:'aff-tripadvisor',href:AFF.tripadvisor(city),icon:'⭐',name:'TripAdvisor',  sub:'Recenzii locale'},
+    ];
+  }
+
+  return buttons.map(b=>`
     <a class="aff-btn ${b.cls}" href="${b.href}" target="_blank" rel="noopener">
       <div class="aff-icon">${b.icon}</div>
       <div class="aff-text">
@@ -410,8 +472,8 @@ function buildAffStrip(city) {
 }
 
 // ══════════════════════════════════════════
-// TRAVEL GUIDE — OpenTripMap (worldwide)
-// Fallback: Wikipedia REST API
+// TRAVEL GUIDE
+// OpenTripMap (worldwide) → Wikipedia Categories → Wikipedia Search
 // ══════════════════════════════════════════
 
 const CAT_MAP = {
@@ -420,26 +482,19 @@ const CAT_MAP = {
   'foods':'Gastronomie','amusements':'Distracție','sport':'Sport',
   'interesting_places':'Atracție'
 };
-
-function otmKind(kinds) {
-  if (!kinds) return 'interesting_places';
+function catLabel(kinds) {
+  if (!kinds) return 'Atracție';
   const k = kinds.split(',')[0];
-  for (const key of Object.keys(CAT_MAP)) {
-    if (k.includes(key)) return key;
-  }
-  return 'interesting_places';
+  for (const key of Object.keys(CAT_MAP)) { if (k.includes(key)) return CAT_MAP[key]; }
+  return 'Atracție';
 }
-
-function catLabel(kinds) { return CAT_MAP[otmKind(kinds)] || 'Atracție'; }
-
 function kindEmoji(kinds) {
   if (!kinds) return '📍';
   if (kinds.includes('museum'))    return '🏛️';
-  if (kinds.includes('religion'))  return '⛪';
-  if (kinds.includes('natural'))   return '🌳';
+  if (kinds.includes('religion') || kinds.includes('church')) return '⛪';
+  if (kinds.includes('natural') || kinds.includes('park'))    return '🌳';
   if (kinds.includes('castle'))    return '🏰';
   if (kinds.includes('food'))      return '🍽️';
-  if (kinds.includes('park'))      return '🌿';
   if (kinds.includes('art'))       return '🎨';
   if (kinds.includes('historic'))  return '🏺';
   if (kinds.includes('beach'))     return '🏖️';
@@ -447,160 +502,269 @@ function kindEmoji(kinds) {
   return '📍';
 }
 
-// Render cards from OTM/Wikipedia data
-function renderCards(places, city) {
+// Bad place names to filter out
+function isBadPlaceName(name) {
+  if (!name) return true;
+  const n = name.toLowerCase();
+  return (
+    n.startsWith('list of') ||
+    n === 'tourist attraction' ||
+    n === 'tourist attractions' ||
+    n.startsWith('lists of') ||
+    n.includes('aaaaa') ||
+    n.length < 3
+  );
+}
+
+// Build per-card action links based on tier
+function buildCardLinks(place, city, tier) {
+  const name = place.name || '';
+  const searchQ = encodeURIComponent(name + ' ' + city);
+  const wikiSlug = place.wikipedia || name;
+
+  const links = [];
+
+  // Google Maps link (always useful)
+  if (place.point) {
+    const {lat, lon} = place.point;
+    links.push(`<a class="tc-link secondary" href="https://www.google.com/maps/search/${searchQ}/@${lat},${lon},15z" target="_blank" rel="noopener">🗺 Hartă</a>`);
+  } else {
+    links.push(`<a class="tc-link secondary" href="https://www.google.com/maps/search/${searchQ}" target="_blank" rel="noopener">🗺 Hartă</a>`);
+  }
+
+  // Wikipedia (always if available)
+  if (wikiSlug && !isBadPlaceName(wikiSlug)) {
+    const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(wikiSlug)}`;
+    links.push(`<a class="tc-link secondary" href="${wikiUrl}" target="_blank" rel="noopener">📖 Wikipedia</a>`);
+  }
+
+  // Booking for this place (large + medium)
+  if (tier === 'large') {
+    links.push(`<a class="tc-link secondary" href="${AFF.gyg(name+' '+city)}" target="_blank" rel="noopener">🎟 Tur ghidat</a>`);
+  }
+
+  // TripAdvisor link (medium+)
+  if (tier !== 'small') {
+    links.push(`<a class="tc-link secondary" href="https://www.tripadvisor.com/Search?q=${searchQ}" target="_blank" rel="noopener">⭐ Recenzii</a>`);
+  }
+
+  return links.join('');
+}
+
+// Render attraction cards
+function renderCards(places, city, tier) {
   const el = document.getElementById('travel-cards');
   if (!el) return;
-  if (!places.length) {
-    el.innerHTML = `<div class="travel-loading"><p>Nu am găsit atracții pentru această locație.</p></div>`;
+  const valid = places.filter(p => !isBadPlaceName(p.name));
+  if (!valid.length) {
+    el.innerHTML = `<div class="travel-loading" style="grid-column:1/-1"><p style="color:var(--text2)">Nu am găsit atracții specifice. Încearcă linkurile de mai sus.</p></div>`;
     return;
   }
-  el.innerHTML = places.map(p => {
-    const desc    = p.wikipedia_extracts?.text || p.info?.descr || p.description || 'Atracție locală recomandată pentru vizitatori.';
-    const descClean = desc.length > 200 ? desc.slice(0,200)+'…' : desc;
-    const source  = p.wikipedia_extracts?.text ? 'Sursă: Wikipedia' : '';
-    const wikiLink = p.wikipedia ? `<a class="tc-link secondary" href="https://en.wikipedia.org/wiki/${encodeURIComponent(p.wikipedia)}" target="_blank" rel="noopener">📖 Wikipedia</a>` : '';
+  el.innerHTML = valid.map(p => {
+    const desc = p.wikipedia_extracts?.text || p.info?.descr || p.description || 'Atracție locală recomandată.';
+    const descClean = desc.length > 220 ? desc.slice(0,220)+'…' : desc;
+    const source = p.wikipedia_extracts?.text ? '<span class="tc-source">📡 Wikipedia</span>' : '';
     return `
       <div class="travel-card">
         <div class="tc-emoji">${kindEmoji(p.kinds)}</div>
         <div class="tc-body">
           <div class="tc-head">
-            <span class="tc-name">${p.name || 'Atracție locală'}</span>
+            <span class="tc-name">${p.name}</span>
             <span class="tc-cat">${catLabel(p.kinds)}</span>
           </div>
           <p class="tc-desc">${descClean}</p>
-          ${source?`<div class="tc-source">${source}</div>`:''}
-          <div class="tc-links">
-            <a class="tc-link" href="${AFF.gyg((p.name||'')+ ' ' +city)}" target="_blank" rel="noopener">🎟 Rezervă tur</a>
-            <a class="tc-link secondary" href="https://www.google.com/search?q=${encodeURIComponent((p.name||'')+' '+city)}" target="_blank" rel="noopener">🔍 Mai mult</a>
-            ${wikiLink}
-          </div>
+          ${source}
+          <div class="tc-links">${buildCardLinks(p, city, tier)}</div>
         </div>
       </div>`;
   }).join('');
 }
 
-// ── STEP 1: Try OpenTripMap ──────────────────────────────────────
+// ── OpenTripMap ──────────────────────────────────────────────────
 async function fetchOTM(city, lat, lon) {
-  // Get POIs near city
-  const radius = 8000;
-  const kinds  = 'interesting_places,cultural,historic,architecture,museums,natural,religion';
-  const url    = `${OTM_BASE}/places/radius?radius=${radius}&lon=${lon}&lat=${lat}&kinds=${kinds}&rate=3&format=json&limit=12&apikey=${OTM_KEY}`;
-
-  const res    = await fetch(url);
+  const url = `${OTM_BASE}/places/radius?radius=8000&lon=${lon}&lat=${lat}&kinds=interesting_places,cultural,historic,architecture,museums,natural,religion&rate=3&format=json&limit=15&apikey=${OTM_KEY}`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`OTM ${res.status}`);
   const places = await res.json();
-  if (!Array.isArray(places) || places.length < 2) throw new Error('Too few results');
+  if (!Array.isArray(places)) throw new Error('Bad OTM response');
 
-  // Sort by rate + popularity
   const top = places
-    .filter(p => p.properties.name && p.properties.name.trim())
+    .filter(p => p.properties?.name && !isBadPlaceName(p.properties.name))
     .sort((a,b) => (b.properties.rate||0)-(a.properties.rate||0))
     .slice(0,6);
 
-  // Fetch details (with Wikipedia extracts) for top 4
+  if (top.length < 2) throw new Error('Too few named places');
+
+  // Fetch details for top 4
   const details = await Promise.all(
     top.slice(0,4).map(async p => {
       try {
         const dr = await fetch(`${OTM_BASE}/places/xid/${p.properties.xid}?apikey=${OTM_KEY}`);
-        return await dr.json();
-      } catch { return p.properties; }
+        const d  = await dr.json();
+        return { ...d, kinds: d.kinds || p.properties.kinds };
+      } catch { return { ...p.properties, kinds: p.properties.kinds }; }
     })
   );
-
-  return details.filter(d => d && (d.name||d.properties?.name));
+  return details.filter(d => d?.name && !isBadPlaceName(d.name));
 }
 
-// ── STEP 2: Wikipedia fallback ───────────────────────────────────
-async function fetchWikipediaFallback(city, country) {
-  // Search for attractions in Wikipedia
-  const lang = country === 'RO' ? 'ro' : 'en';
-  const query = lang==='ro' ? `${city} atractii turistice` : `${city} tourist attractions`;
+// ── Wikipedia Categories API (precise) ──────────────────────────
+// Fetches pages IN the category "Tourist attractions in {City}"
+// This gives actual specific places, not generic articles
+async function fetchWikiByCategory(city, country) {
+  const lang = (country === 'RO') ? 'ro' : 'en';
+  const catName = lang === 'ro'
+    ? `Obiective turistice din ${city}`
+    : `Tourist attractions in ${city}`;
 
-  const search = await fetch(
-    `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&srlimit=8&origin=*`
-  ).then(r=>r.json());
+  const catUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:${encodeURIComponent(catName)}&format=json&cmlimit=12&cmtype=page&origin=*`;
+  const catRes = await fetch(catUrl).then(r=>r.json());
+  const members = catRes?.query?.categorymembers || [];
 
-  const results = search?.query?.search || [];
+  if (members.length < 2) throw new Error(`Category too small: ${members.length}`);
 
-  // Get summaries for top 4 distinct results
+  // Fetch summaries for each member
   const summaries = await Promise.all(
-    results.slice(0,4).map(r =>
-      fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(r.title)}`)
-        .then(res=>res.json())
-        .catch(()=>null)
+    members.slice(0,6).map(m =>
+      fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(m.title)}`)
+        .then(r=>r.json()).catch(()=>null)
     )
   );
 
   return summaries
-    .filter(s => s && s.title && s.extract && !s.title.toLowerCase().includes('disambiguation'))
+    .filter(s => s && s.type !== 'disambiguation' && s.extract && s.title && !isBadPlaceName(s.title))
     .map(s => ({
       name: s.title,
-      kinds: guessKindFromTitle(s.title),
-      description: s.extract,
+      kinds: guessKind(s.title, s.description || ''),
       wikipedia: s.title,
       wikipedia_extracts: { text: s.extract }
     }));
 }
 
-function guessKindFromTitle(title) {
-  const t = title.toLowerCase();
+// ── Wikipedia Search fallback (direct place search) ─────────────
+// Search for the CITY's own Wikipedia page and extract sights from it
+async function fetchWikiCityPage(city, country) {
+  const lang = (country === 'RO') ? 'ro' : 'en';
+
+  // Try "Tourism in {city}" page first
+  const tourismPage = lang === 'ro' ? `Turism în ${city}` : `Tourism in ${city}`;
+  let summaries = [];
+
+  // Strategy: search Wikipedia for "{city} {landmarks|sights|monuments}"
+  const queries = lang === 'ro'
+    ? [`${city} monumente`, `${city} obiective`, `${city} muzeu`, `${city} parc`]
+    : [`${city} museum`, `${city} cathedral church`, `${city} park garden`, `${city} palace castle`];
+
+  const results = await Promise.all(
+    queries.slice(0,3).map(q =>
+      fetch(`https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&srlimit=3&origin=*`)
+        .then(r=>r.json())
+        .catch(()=>({query:{search:[]}}))
+    )
+  );
+
+  // Collect unique relevant titles
+  const seen = new Set();
+  const titles = [];
+  for (const r of results) {
+    for (const item of (r?.query?.search || [])) {
+      const t = item.title;
+      // Only include if the city name appears in the article title (more precise)
+      if (!seen.has(t) && !isBadPlaceName(t) && normalizeStr(t).includes(normalizeStr(city).split(' ')[0])) {
+        seen.add(t);
+        titles.push(t);
+      }
+    }
+  }
+
+  if (titles.length < 2) throw new Error('Not enough precise results');
+
+  const fetched = await Promise.all(
+    titles.slice(0,5).map(t =>
+      fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(t)}`)
+        .then(r=>r.json()).catch(()=>null)
+    )
+  );
+
+  return fetched
+    .filter(s => s && s.type !== 'disambiguation' && s.extract && !isBadPlaceName(s.title))
+    .map(s => ({
+      name: s.title,
+      kinds: guessKind(s.title, s.description || ''),
+      wikipedia: s.title,
+      wikipedia_extracts: { text: s.extract }
+    }));
+}
+
+function guessKind(title, desc) {
+  const t = (title + ' ' + desc).toLowerCase();
   if (t.includes('museum') || t.includes('muzeu')) return 'museums';
-  if (t.includes('church') || t.includes('cathedral') || t.includes('biseric') || t.includes('manastir')) return 'religion';
-  if (t.includes('park') || t.includes('parc') || t.includes('garden') || t.includes('gradina')) return 'natural';
+  if (t.includes('church') || t.includes('cathedral') || t.includes('biseric') || t.includes('monastir') || t.includes('manastir')) return 'religion';
+  if (t.includes('park') || t.includes('garden') || t.includes('parc') || t.includes('gradina')) return 'natural';
   if (t.includes('castle') || t.includes('palace') || t.includes('palat') || t.includes('castel')) return 'historic';
-  if (t.includes('monument') || t.includes('memorial')) return 'historic';
-  if (t.includes('restaurant') || t.includes('market') || t.includes('piata')) return 'foods';
+  if (t.includes('monument') || t.includes('memorial') || t.includes('statue')) return 'historic';
+  if (t.includes('beach') || t.includes('plaja')) return 'beach';
+  if (t.includes('restaurant') || t.includes('food') || t.includes('market')) return 'foods';
+  if (t.includes('art') || t.includes('gallery')) return 'art';
+  if (t.includes('tower') || t.includes('bridge') || t.includes('fountain')) return 'architecture';
   return 'interesting_places';
 }
 
-// ── MAIN travel guide orchestrator ──────────────────────────────
+// ── MAIN orchestrator ────────────────────────────────────────────
 async function fetchTravelGuide(city, country, lat, lon) {
   const section = document.getElementById('s-travel');
   if (!section) return;
   section.style.display = '';
 
-  // Update title + affiliate strip
+  const tier    = cityTier(city);
   const titleEl = document.getElementById('travel-title');
-  if (titleEl) titleEl.textContent = `Ce poți face în ${city}`;
-  const tagEl = document.getElementById('travel-tagline');
-  if (tagEl) tagEl.textContent = '';
-  const affEl = document.getElementById('affiliate-strip');
-  if (affEl) affEl.innerHTML = buildAffStrip(city);
-  const ideaEl = document.getElementById('today-idea');
-  if (ideaEl) ideaEl.style.display = 'none';
-
-  // Show loading
+  const tagEl   = document.getElementById('travel-tagline');
+  const affEl   = document.getElementById('affiliate-strip');
   const cardsEl = document.getElementById('travel-cards');
-  if (cardsEl) cardsEl.innerHTML = `
+  const ideaEl  = document.getElementById('today-idea');
+
+  if (titleEl) titleEl.textContent = `Ce poți face în ${city}`;
+  if (tagEl)   tagEl.textContent   = '';
+  if (affEl)   affEl.innerHTML     = buildAffStrip(city);
+  if (ideaEl)  ideaEl.style.display = 'none';
+  if (cardsEl) cardsEl.innerHTML   = `
     <div class="travel-loading">
       <div class="loading-dots"><span></span><span></span><span></span></div>
-      <p style="margin-top:14px;font-size:13px;color:var(--text2)">
-        Se caută atracții din ${city}…
-      </p>
+      <p style="margin-top:14px;font-size:13px;color:var(--text2)">Se caută atracții din ${city}…</p>
     </div>`;
 
   let places = [];
+  let source  = '';
 
-  // Try OpenTripMap first
+  // 1️⃣ OpenTripMap (best, has GPS coordinates + Wikipedia links)
   try {
     places = await fetchOTM(city, lat, lon);
-    if (tagEl) tagEl.textContent = `${places.length} atracții găsite prin OpenTripMap pentru ${city}.`;
+    source = `${places.length} atracții găsite via OpenTripMap`;
   } catch(e) {
-    console.warn('OTM failed, trying Wikipedia:', e.message);
-    // Fallback: Wikipedia
+    console.warn('[OTM failed]', e.message);
+
+    // 2️⃣ Wikipedia Category (precise — actual places in category)
     try {
-      places = await fetchWikipediaFallback(city, country);
-      if (tagEl) tagEl.textContent = `Atracții recomandate pentru ${city} — date via Wikipedia.`;
+      places = await fetchWikiByCategory(city, country);
+      source = `Atracții via Wikipedia categorie`;
     } catch(e2) {
-      console.error('Wikipedia fallback failed:', e2);
+      console.warn('[Wiki Category failed]', e2.message);
+
+      // 3️⃣ Wikipedia targeted search (city-specific articles)
+      try {
+        places = await fetchWikiCityPage(city, country);
+        source = `Rezultate Wikipedia pentru ${city}`;
+      } catch(e3) {
+        console.warn('[Wiki Search failed]', e3.message);
+        source = '';
+      }
     }
   }
 
-  renderCards(places, city);
+  if (tagEl) tagEl.textContent = source;
+  renderCards(places, city, tier);
   lucide.createIcons();
 }
-
 // ══════════════════════════════════════════
 // EVENTS
 // ══════════════════════════════════════════
