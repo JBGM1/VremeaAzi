@@ -2,55 +2,140 @@
 <html lang="ro">
 <head>
   <meta charset="UTF-8">
-  <title>Weather App</title>
-
-  <!-- Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VremeaAzi – Meteo Avansat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <div class="weather-card">
 
-    <button id="theme-toggle">🌙</button>
+    <!-- HEADER -->
+    <div class="header">
+      <div class="app-brand">
+        <span class="brand-icon">🌤</span>
+        <h3 class="app-title">VremeaAzi</h3>
+      </div>
+      <button id="theme-toggle" aria-label="Schimbă tema">
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+          <span class="toggle-icon-sun">☀️</span>
+          <span class="toggle-icon-moon">🌙</span>
+        </span>
+      </button>
+    </div>
 
+    <!-- SEARCH -->
     <div class="search-container">
-      <input
-        type="text"
-        id="city-input"
-        placeholder="Caută orașul"
-        autocomplete="off"
-      >
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="city-input" placeholder="Caută un oraș..." autocomplete="off">
+      </div>
       <div id="suggestions" class="suggestions"></div>
     </div>
 
     <div class="button-group">
-      <button id="search-btn">Caută</button>
-      <button id="locate-btn">Locația mea</button>
+      <button id="search-btn"><span>🔎</span> Caută</button>
+      <button id="locate-btn" class="btn-secondary"><span>📍</span> Locația mea</button>
     </div>
 
+    <!-- MAIN WEATHER INFO -->
     <div class="info">
-      <h1 id="city-name">—</h1>
 
-      <div class="weather-main">
-        <img id="weather-icon">
-        <h2 id="temp">—°C</h2>
+      <div class="location-header">
+        <h1 id="city-name">—</h1>
+        <p id="date-time" class="date-time">—</p>
       </div>
 
-      <p id="desc">—</p>
-
-      <div class="details">
-        <p>💧 <span id="humidity">—</span></p>
-        <p>💨 <span id="wind">—</span></p>
+      <div class="weather-hero">
+        <div class="weather-icon-wrap">
+          <img id="weather-icon" alt="Pictogramă vreme">
+        </div>
+        <div class="temp-block">
+          <h2 id="temp">—°</h2>
+          <p id="feels-like">Simțit: —°C</p>
+          <p id="desc" class="description">—</p>
+        </div>
       </div>
 
-      <div id="map-container">
-        <iframe id="google-map"></iframe>
-      </div>
-    </div>
+      <!-- Hourly -->
+      <section class="card-section">
+        <h3 class="section-title"><span>⏱</span> Prognoza orară</h3>
+        <div id="hourly-forecast" class="hourly-container"></div>
+      </section>
 
-  </div>
+      <!-- Details Grid -->
+      <div class="details-grid">
+        <div class="detail-card"><div class="d-icon">💧</div><div class="d-body"><span class="d-label">Umiditate</span><span id="humidity" class="d-val">—</span></div></div>
+        <div class="detail-card"><div class="d-icon">💨</div><div class="d-body"><span class="d-label">Vânt</span><span id="wind" class="d-val">—</span></div></div>
+        <div class="detail-card"><div class="d-icon">🌡️</div><div class="d-body"><span class="d-label">Presiune</span><span id="pressure" class="d-val">—</span></div></div>
+        <div class="detail-card"><div class="d-icon">👁️</div><div class="d-body"><span class="d-label">Vizibilitate</span><span id="visibility" class="d-val">—</span></div></div>
+        <div class="detail-card"><div class="d-icon">🧭</div><div class="d-body"><span class="d-label">Direcție vânt</span><span id="wind-direction" class="d-val">—</span></div></div>
+        <div class="detail-card"><div class="d-icon">☁️</div><div class="d-body"><span class="d-label">Nori</span><span id="clouds" class="d-val">—</span></div></div>
+        <div class="detail-card"><div class="d-icon">💦</div><div class="d-body"><span class="d-label">Punct de rouă</span><span id="dew-point" class="d-val">—</span></div></div>
+        <div class="detail-card"><div class="d-icon">🔆</div><div class="d-body"><span class="d-label">Index UV</span><span id="uv-index" class="d-val">—</span></div></div>
+      </div>
+
+      <!-- Sunrise / Sunset -->
+      <section class="card-section">
+        <h3 class="section-title"><span>🌅</span> Răsărit &amp; Apus</h3>
+        <div class="sun-times">
+          <div class="sun-item"><span class="sun-emoji">🌅</span><div><div class="sun-label">Răsărit</div><div id="sunrise" class="sun-val">—</div></div></div>
+          <div class="sun-divider"></div>
+          <div class="sun-item"><span class="sun-emoji">🌇</span><div><div class="sun-label">Apus</div><div id="sunset" class="sun-val">—</div></div></div>
+        </div>
+        <div class="daylight-bar">
+          <span class="daylight-label">Durată zi</span>
+          <span id="daylight-duration" class="daylight-val">—</span>
+        </div>
+      </section>
+
+      <!-- Air Quality -->
+      <section class="card-section">
+        <h3 class="section-title"><span>🌫️</span> Calitatea aerului</h3>
+        <div class="aqi-wrapper">
+          <div class="aqi-main">
+            <div id="aqi-value" class="aqi-num">—</div>
+            <div id="aqi-label" class="aqi-desc">Se încarcă…</div>
+          </div>
+          <div class="aqi-grid">
+            <div class="aqi-cell"><span class="aqi-name">PM2.5</span><span id="pm25" class="aqi-val">—</span></div>
+            <div class="aqi-cell"><span class="aqi-name">PM10</span><span id="pm10" class="aqi-val">—</span></div>
+            <div class="aqi-cell"><span class="aqi-name">O₃</span><span id="o3" class="aqi-val">—</span></div>
+            <div class="aqi-cell"><span class="aqi-name">NO₂</span><span id="no2" class="aqi-val">—</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5-day forecast -->
+      <section class="card-section">
+        <h3 class="section-title"><span>📅</span> Prognoza 5 zile</h3>
+        <div id="forecast" class="forecast-container"></div>
+      </section>
+
+      <!-- Additional info -->
+      <section class="card-section">
+        <h3 class="section-title"><span>📊</span> Informații suplimentare</h3>
+        <div class="info-grid">
+          <div class="info-cell"><span class="info-label">Coordonate</span><span id="coordinates" class="info-val">—</span></div>
+          <div class="info-cell"><span class="info-label">Fus orar</span><span id="timezone" class="info-val">—</span></div>
+          <div class="info-cell"><span class="info-label">Altitudine</span><span id="elevation" class="info-val">— m</span></div>
+          <div class="info-cell"><span class="info-label">Prob. ploaie</span><span id="rain-probability" class="info-val">—</span></div>
+        </div>
+      </section>
+
+      <!-- Map -->
+      <section class="card-section" id="map-section">
+        <h3 class="section-title"><span>🗺️</span> Hartă interactivă</h3>
+        <div class="map-wrap">
+          <iframe id="google-map" loading="lazy" title="Hartă locație"></iframe>
+        </div>
+      </section>
+
+    </div><!-- end .info -->
+  </div><!-- end .weather-card -->
 
   <script src="script.js"></script>
 </body>
