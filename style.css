@@ -577,6 +577,13 @@ button:active{transform:translateY(0)!important}
 .aff-viator .aff-icon{background:rgba(255,255,255,.1)}
 .aff-airbnb{background:linear-gradient(135deg,#a0003a,#ff385c)}
 .aff-airbnb .aff-icon{background:rgba(255,255,255,.15)}
+.aff-tripadvisor{background:linear-gradient(135deg,#00612c,#34d27b)}
+.aff-tripadvisor .aff-icon{background:rgba(255,255,255,.15)}
+.aff-facebook{background:linear-gradient(135deg,#0a4fa3,#1877f2)}
+.aff-facebook .aff-icon{background:rgba(255,255,255,.15)}
+
+/* auto-fit: works for 2,3,4 buttons */
+.affiliate-strip{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
 
 /* Travel cards */
 .travel-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
