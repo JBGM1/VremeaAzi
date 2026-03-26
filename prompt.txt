@@ -1,0 +1,5 @@
+repara logoul site ului din stanga sus(<circle cx="16" cy="16" r="16" fill="url(#brandGrad)"></circle>). (cercul albastru de sus)
+
+ Atunci cand dau scroll in jos, trece de la vreme la orar asa cum ar trebui dar sare peste 5 zile si detalii, iar la final harta nu apare deloc ca a fi selectata.
+
+Cadn caut o anumita locatie mai specifica, cum ar fi valea lupului, nu ma intreaba de judet si mi da rezultate din toata tara. Asta duce la informatii inacurate. (eu am cautat valea lupului cu gandul la acel valea lupului din judetul iasi si la sectiunea "ce poti face in valea lupului" mi a dat locatii precum valea lupului hunedoara, sau valea florilor cluj. De asemenea repara butonul "grpuri locale"
