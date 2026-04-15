@@ -24,6 +24,9 @@ let debounceTimer  = null;
 let currentCity    = '';
 let currentCountry = '';
 
+let currentLat = 0;
+let currentLon = 0;
+
 // ══════════════════════════════════════════
 // THEME
 // ══════════════════════════════════════════
@@ -36,46 +39,61 @@ applyTheme(localStorage.getItem('lightMode') === 'true');
 themeBtn.addEventListener('click', () => applyTheme(!document.body.classList.contains('light')));
 
 // ══════════════════════════════════════════
-// SIDEBAR
+// SIDEBAR — Cu hover la scroll (versiune simplificată, mai puțin flicker)
 // ══════════════════════════════════════════
 const sidebar = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebar-toggle');
+const navItems = document.querySelectorAll('.nav-item[data-section]');
+const scrollArea = document.getElementById('scroll-area');
+
 if (sidebarToggle) {
   sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
 }
 
-// Active nav item on scroll
-const navItems = document.querySelectorAll('.nav-item[data-section]');
-const scrollArea = document.getElementById('scroll-area');
-
+// Click → scroll to middle + force active
 navItems.forEach(item => {
   item.addEventListener('click', e => {
     e.preventDefault();
     const id = item.dataset.section;
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+
+    if (el) {
+      const targetY = el.offsetTop + (el.offsetHeight * 0.35) - (scrollArea.clientHeight * 0.45);
+      scrollArea.scrollTo({ 
+        top: Math.max(0, targetY), 
+        behavior: 'smooth' 
+      });
+    }
+
     navItems.forEach(n => n.classList.remove('active'));
     item.classList.add('active');
+    
+    if (window.innerWidth <= 640) sidebar.classList.add('collapsed');
   });
 });
 
+// Simple scroll spy (mai puțin sensibil la flicker)
 if (scrollArea) {
   scrollArea.addEventListener('scroll', () => {
     let current = '';
+    const scrollPos = scrollArea.scrollTop + (scrollArea.clientHeight * 0.4);
+
     navItems.forEach(item => {
       const id = item.dataset.section;
       const el = document.getElementById(id);
-      if (el && el.style.display !== 'none') {
-        const top = el.getBoundingClientRect().top;
-        if (top < 200) current = id;
+      if (!el) return;
+
+      const top = el.offsetTop;
+      const bottom = top + el.offsetHeight;
+
+      if (scrollPos >= top && scrollPos < bottom) {
+        current = id;
       }
     });
-    if (current) {
-      navItems.forEach(n => n.classList.toggle('active', n.dataset.section === current));
-    }
+
+    navItems.forEach(n => n.classList.toggle('active', n.dataset.section === current));
   });
 }
-
 // ══════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════
@@ -192,7 +210,7 @@ function renderSugg(cities) {
     return `<div class="suggestion-item" data-query="${q}" data-display="${c.name}">${label}</div>`;
   }).join('');
   suggestDiv.classList.add('active');
-  lucide.createIcons();
+  safeIcons();
 }
 
 async function fetchAndShow(q) {
@@ -273,6 +291,9 @@ async function checkByCoords(lat, lon) {
 // ══════════════════════════════════════════
 function updateUI(d) {
   updateDateTime();
+  currentLat = d.coord.lat;
+  currentLon = d.coord.lon;
+
   const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   set('city-name', d.name);
   set('temp',        `${Math.round(d.main.temp)}°`);
@@ -303,10 +324,14 @@ function updateUI(d) {
   const dl = (d.sys.sunset-d.sys.sunrise)*1000;
   set('daylight-duration', `${Math.floor(dl/3600000)}h ${Math.floor((dl%3600000)/60000)}m`);
 
+  // Google Map (kept)
   const map = document.getElementById('google-map');
   if (map) map.src = `https://www.google.com/maps?q=${d.coord.lat},${d.coord.lon}&output=embed`;
 
-  lucide.createIcons();
+  // NEW 3D Earth button (beta)
+  add3DEarthButton(d.coord.lat, d.coord.lon);
+
+  safeIcons();
 }
 
 function setExtra(d) {
@@ -430,11 +455,11 @@ const AFF = {
   viator:      c=>`https://www.viator.com/search/${encodeURIComponent(c)}?pid=YOUR_PID`,
   airbnb:      c=>`https://www.airbnb.com/s/${encodeURIComponent(c)}/homes`,
   tripadvisor: c=>`https://www.tripadvisor.com/Search?q=${encodeURIComponent(c)}`,
-  facebook:    c=>`https://www.facebook.com/search/groups/?q=${encodeURIComponent(c+' tourism travel')}`,
+  facebook:    (c,q)=>`https://www.facebook.com/search/groups/?q=${encodeURIComponent(q||c)}`,
 };
 
 // Affiliate strip buttons vary by tier
-function buildAffStrip(city) {
+function buildAffStrip(city, country) {
   const tier = cityTier(city);
   let buttons = [];
 
@@ -450,13 +475,13 @@ function buildAffStrip(city) {
       {cls:'aff-booking', href:AFF.booking(city),     icon:'🏨', name:'Booking.com',   sub:'Rezervă hotel'},
       {cls:'aff-airbnb',  href:AFF.airbnb(city),      icon:'🏡', name:'Airbnb',         sub:'Cazări unice'},
       {cls:'aff-tripadvisor',href:AFF.tripadvisor(city),icon:'⭐',name:'TripAdvisor',   sub:'Recenzii & locuri'},
-      {cls:'aff-facebook',href:AFF.facebook(city),    icon:'👥', name:'Grupuri locale', sub:'Comunități Facebook'},
+      {cls:'aff-facebook',href:AFF.facebook(city,fbQuery(city,country)),icon:'👥',name:'Grupuri Facebook',sub:'Grupuri locale'},
     ];
   } else {
     // small
     buttons = [
       {cls:'aff-booking', href:AFF.booking(city),     icon:'🏨', name:'Booking.com',   sub:'Cazare'},
-      {cls:'aff-facebook',href:AFF.facebook(city),    icon:'👥', name:'Grupuri locale', sub:'Comunități Facebook'},
+      {cls:'aff-facebook',href:AFF.facebook(city,fbQuery(city,country)),icon:'👥',name:'Grupuri Facebook',sub:'Grupuri locale'},
       {cls:'aff-tripadvisor',href:AFF.tripadvisor(city),icon:'⭐',name:'TripAdvisor',  sub:'Recenzii locale'},
     ];
   }
@@ -517,7 +542,7 @@ function isBadPlaceName(name) {
 }
 
 // Build per-card action links based on tier
-function buildCardLinks(place, city, tier) {
+function buildCardLinks(place, city, tier, country) {
   const name = place.name || '';
   const searchQ = encodeURIComponent(name + ' ' + city);
   const wikiSlug = place.wikipedia || name;
@@ -552,12 +577,20 @@ function buildCardLinks(place, city, tier) {
 }
 
 // Render attraction cards
-function renderCards(places, city, tier) {
+function renderCards(places, city, tier, country) {
   const el = document.getElementById('travel-cards');
   if (!el) return;
-  const valid = places.filter(p => !isBadPlaceName(p.name));
+  // Quality filter: must have name + meaningful description (min 80 chars)
+  const MIN_DESC = 80;
+  const valid = places
+    .filter(p => {
+      if (isBadPlaceName(p.name)) return false;
+      const desc = p.wikipedia_extracts?.text || p.info?.descr || p.description || '';
+      return desc.length >= MIN_DESC;
+    })
+    .slice(0, 4); // max 4 — quality over quantity
   if (!valid.length) {
-    el.innerHTML = `<div class="travel-loading" style="grid-column:1/-1"><p style="color:var(--text2)">Nu am găsit atracții specifice. Încearcă linkurile de mai sus.</p></div>`;
+    el.innerHTML = `<div class="travel-loading" style="grid-column:1/-1"><p style="color:var(--text2)">Nu am găsit atracții cu informații suficiente. Încearcă linkurile de mai sus.</p></div>`;
     return;
   }
   el.innerHTML = valid.map(p => {
@@ -574,7 +607,7 @@ function renderCards(places, city, tier) {
           </div>
           <p class="tc-desc">${descClean}</p>
           ${source}
-          <div class="tc-links">${buildCardLinks(p, city, tier)}</div>
+          <div class="tc-links">${buildCardLinks(p, city, tier, country)}</div>
         </div>
       </div>`;
   }).join('');
@@ -582,29 +615,24 @@ function renderCards(places, city, tier) {
 
 // ── OpenTripMap ──────────────────────────────────────────────────
 async function fetchOTM(city, lat, lon) {
-  const url = `${OTM_BASE}/places/radius?radius=8000&lon=${lon}&lat=${lat}&kinds=interesting_places,cultural,historic,architecture,museums,natural,religion&rate=3&format=json&limit=15&apikey=${OTM_KEY}`;
+  const url = `${OTM_BASE}/places/radius?radius=10000&lon=${lon}&lat=${lat}&kinds=interesting_places,cultural,historic,architecture,museums,natural,religion&rate=2&format=json&limit=12&apikey=${OTM_KEY}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`OTM ${res.status}`);
   const places = await res.json();
-  if (!Array.isArray(places)) throw new Error('Bad OTM response');
 
   const top = places
     .filter(p => p.properties?.name && !isBadPlaceName(p.properties.name))
-    .sort((a,b) => (b.properties.rate||0)-(a.properties.rate||0))
+    .sort((a,b) => (b.properties.rate||0) - (a.properties.rate||0))
     .slice(0,6);
 
-  if (top.length < 2) throw new Error('Too few named places');
-
-  // Fetch details for top 4
-  const details = await Promise.all(
-    top.slice(0,4).map(async p => {
-      try {
-        const dr = await fetch(`${OTM_BASE}/places/xid/${p.properties.xid}?apikey=${OTM_KEY}`);
-        const d  = await dr.json();
-        return { ...d, kinds: d.kinds || p.properties.kinds };
-      } catch { return { ...p.properties, kinds: p.properties.kinds }; }
-    })
-  );
+  // NO MORE "Too few quality places" throw → works perfectly for small towns like Valea Lupului
+  const details = await Promise.all(top.map(async p => {
+    try {
+      const dr = await fetch(`${OTM_BASE}/places/xid/${p.properties.xid}?apikey=${OTM_KEY}`);
+      const d = await dr.json();
+      return { ...d, kinds: d.kinds || p.properties.kinds };
+    } catch { return { ...p.properties, kinds: p.properties.kinds }; }
+  }));
   return details.filter(d => d?.name && !isBadPlaceName(d.name));
 }
 
@@ -632,7 +660,7 @@ async function fetchWikiByCategory(city, country) {
   );
 
   return summaries
-    .filter(s => s && s.type !== 'disambiguation' && s.extract && s.title && !isBadPlaceName(s.title))
+    .filter(s => s && s.type !== 'disambiguation' && s.extract && s.extract.length >= 80 && s.title && !isBadPlaceName(s.title))
     .map(s => ({
       name: s.title,
       kinds: guessKind(s.title, s.description || ''),
@@ -687,7 +715,7 @@ async function fetchWikiCityPage(city, country) {
   );
 
   return fetched
-    .filter(s => s && s.type !== 'disambiguation' && s.extract && !isBadPlaceName(s.title))
+    .filter(s => s && s.type !== 'disambiguation' && s.extract && s.extract.length >= 80 && !isBadPlaceName(s.title))
     .map(s => ({
       name: s.title,
       kinds: guessKind(s.title, s.description || ''),
@@ -725,7 +753,7 @@ async function fetchTravelGuide(city, country, lat, lon) {
 
   if (titleEl) titleEl.textContent = `Ce poți face în ${city}`;
   if (tagEl)   tagEl.textContent   = '';
-  if (affEl)   affEl.innerHTML     = buildAffStrip(city);
+  if (affEl)   affEl.innerHTML     = buildAffStrip(city, country);
   if (ideaEl)  ideaEl.style.display = 'none';
   if (cardsEl) cardsEl.innerHTML   = `
     <div class="travel-loading">
@@ -762,9 +790,54 @@ async function fetchTravelGuide(city, country, lat, lon) {
   }
 
   if (tagEl) tagEl.textContent = source;
-  renderCards(places, city, tier);
-  lucide.createIcons();
+  renderCards(places, city, tier, country);
+  safeIcons();
 }
+// ══════════════════════════════════════════
+// NEW: 3D Earth Beta
+// ══════════════════════════════════════════
+function add3DEarthButton(lat, lon) {
+  const btn = document.getElementById('3d-earth-btn');
+  if (!btn) return;
+  btn.onclick = () => {
+    const url = `https://earth.google.com/web/@${lat.toFixed(6)},${lon.toFixed(6)},800a,35d,0h,0t,0r`;
+    window.open(url, '_blank');
+  };
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+
+// Safe Lucide icon refresh — queues if not yet loaded
+function safeIcons() {
+  if (window.lucide && typeof lucide.createIcons === 'function') {
+    lucide.createIcons();
+  } else {
+    window._lucideCbs = window._lucideCbs || [];
+    window._lucideCbs.push(() => { if(window.lucide) lucide.createIcons(); });
+  }
+}
+
+// Country code → local-language Facebook group search term
+const FB_TERMS = {
+  'RO':'ghid', 'FR':'guide touristique', 'DE':'Reiseführer', 'IT':'guida turistica',
+  'ES':'guía turística', 'PT':'guia turístico', 'PL':'przewodnik', 'CZ':'průvodce',
+  'HU':'útikalauz', 'SK':'sprievodca', 'HR':'vodič', 'SI':'vodnik',
+  'GR':'οδηγός', 'TR':'gezi rehberi', 'RU':'путеводитель', 'UA':'гід',
+  'JP':'観光', 'CN':'旅游', 'KR':'여행', 'AR':'دليل السياحة',
+  'NL':'reisgids', 'BE':'reisgids', 'SE':'resguide', 'NO':'reiseguide',
+  'DK':'rejseguide', 'FI':'matkaopas',
+  'US':'travel guide', 'GB':'travel guide', 'CA':'travel guide',
+  'AU':'travel guide', 'NZ':'travel guide', 'ZA':'travel guide',
+  'IN':'travel guide', 'MX':'guía turística', 'BR':'guia turístico',
+  'AR_c':'guía', 'CL':'guía', 'CO':'guía',
+};
+function fbQuery(city, country) {
+  const term = FB_TERMS[country] || 'travel';
+  return `${city} ${term}`;
+}
+
 // ══════════════════════════════════════════
 // EVENTS
 // ══════════════════════════════════════════
@@ -799,24 +872,35 @@ document.addEventListener('click', e=>{
 locateBtn.addEventListener('click', ()=>{
   if (!navigator.geolocation) { alert('Geolocația nu este suportată.'); return; }
   locateBtn.innerHTML = '<i data-lucide="loader"></i>';
-  lucide.createIcons();
+  safeIcons();
   navigator.geolocation.getCurrentPosition(
     pos => checkByCoords(pos.coords.latitude, pos.coords.longitude).then(()=>{
       locateBtn.innerHTML = '<i data-lucide="locate"></i><span>Locația mea</span>';
-      lucide.createIcons();
+      safeIcons();
     }),
     ()  => {
       alert('Nu s-a putut obține locația.');
       locateBtn.innerHTML = '<i data-lucide="locate"></i><span>Locația mea</span>';
-      lucide.createIcons();
+      safeIcons();
     }
   );
 });
 
 // ══════════════════════════════════════════
-// INIT
+// INIT (no flash on mobile)
 // ══════════════════════════════════════════
-window.addEventListener('load', ()=>{
-  lucide.createIcons();
+window.addEventListener('load', () => {
+  safeIcons();
+
+  // Prevent flash: force collapsed on mobile from the start
+  if (window.innerWidth <= 640) {
+    sidebar.style.transition = 'none';           // disable animation on load
+    sidebar.classList.add('collapsed');
+    // Re-enable transition after a tiny delay
+    setTimeout(() => {
+      sidebar.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
+    }, 10);
+  }
+
   checkWeather(recentSearches[0] || 'București');
 });
