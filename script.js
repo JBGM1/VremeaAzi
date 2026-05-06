@@ -15,9 +15,8 @@ const REVERSE_BASE = "https://nominatim.openstreetmap.org/reverse";
 const OVERPASS_BASE = "https://overpass-api.de/api/interpreter";
 const FORECAST_BASE = "https://api.open-meteo.com/v1/forecast";
 
-const GEMINI_KEY =
-  (window.__VREMEA__ && window.__VREMEA__.GEMINI_API_KEY) || "";
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_KEY = "AIzaSyB3UWb62owT24OA3asLfbGqtQDwGVv8G1Y";
+const GEMINI_MODEL = "gemini-flash-latest";
 const GEMINI_URL = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
 
