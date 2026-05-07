@@ -7,8 +7,6 @@
    AI:        Google Gemini (key injected via window.__VREMEA__)
 ══════════════════════════════════════════ */
 
-import { WEATHER_API_KEY, GEMINI_API_KEY } from './config.js';
-
 const WX_KEY = window.WEATHER_API_KEY;
 const WX_BASE = "https://api.openweathermap.org";
 
